@@ -1,6 +1,7 @@
 package lorca
 
 import (
+	"bytes"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,6 +15,11 @@ var ChromeExecutable = LocateChrome
 // LocateChrome returns a path to the Chrome binary, or an empty string if
 // Chrome installation is not found.
 func LocateChrome() string {
+	path := locateChrome()
+	if path != "" {
+		return path
+	}
+
 	paths := []string{
 		"/usr/bin/google-chrome-stable",
 		"/usr/bin/google-chrome",
@@ -31,6 +37,52 @@ func LocateChrome() string {
 		}
 		return path
 	}
+	return ""
+}
+
+// locateChrome uses cmd/shell commands to find chrome executable candidates
+func locateChrome() string {
+	var cmd *exec.Cmd
+
+	if runtime.GOOS == "windows" {
+		// try windows' "where" command to find possible chrome executables
+		cmd = exec.Command("where", "chrome")
+	} else {
+		// try shell's "which" command to find possible chrome executables
+		// on other OS's
+		cmd = exec.Command("which", "-a", "chrome")
+	}
+
+	// write cmd's output into a buffer
+	out := &bytes.Buffer{}
+	cmd.Stdout = out
+	e := cmd.Run()
+	if e != nil {
+		return ""
+	}
+
+	// drain buffer line by line for possible paths
+	for out.Len() > 0 {
+		path, e := out.ReadString('\n')
+
+		// error if no new-line found
+		if e != nil {
+			return ""
+		}
+
+		// remove new-line from end of string
+		if len(path) > 1 {
+			path = path[:len(path)-2]
+		}
+
+		// check exists
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			continue
+		}
+
+		return path
+	}
+
 	return ""
 }
 
