@@ -28,6 +28,7 @@ func LocateChrome() string {
 		"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 		"/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
 		"/Applications/Chromium.app/Contents/MacOS/Chromium",
+		"C:/Users/" + os.Getenv("USERNAME") + "/AppData/Local/Google/Chrome/Application/chrome.exe",
 		"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
 	}
 
@@ -102,9 +103,9 @@ func PromptDownload() {
 	switch runtime.GOOS {
 	case "linux":
 		exec.Command("xdg-open", url).Run()
-	case "windows":
-		exec.Command("open", url).Run()
 	case "darwin":
+		exec.Command("open", url).Run()
+	case "windows":
 		r := strings.NewReplacer("&", "^&")
 		exec.Command("cmd", "/c", "start", r.Replace(url)).Run()
 	}
